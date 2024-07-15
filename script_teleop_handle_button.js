@@ -9,7 +9,6 @@ var isLED2On = false;  // Variable to track the state of LED2
 var led_duration = 500;
 var doubleClickState = false;  // Track the state of double-click actions
 
-
 setWatch(function() {
     if (clickTimer !== null) {
         clearTimeout(clickTimer);
@@ -22,26 +21,36 @@ setWatch(function() {
         clickTimer = null;
         switch (clickCount) {
             case 1:
-                // Single click, output 'a' and toggle red or blue LED based on LED2's state
-                NRF.sendHIDReport([0, 0, kb.KEY.G, 0, 0, 0, 0, 0], function() {
-                    btnReleased(); // Release 'a' after pressing
-                });
-                handleLEDForSingleClick();
+                // Single click
+                if (doubleClickState) {
+                    // Send 'G' key input and blink LED1
+                    NRF.sendHIDReport([0, 0, kb.KEY.G, 44, 0, 0, 0, 0], function() {
+                        btnPressed(44);
+                    });
+                } else {
+                    // Send 'G' key input and blink LED1
+                    NRF.sendHIDReport([0, 0, kb.KEY.G, 0, 0, 0, 0, 0], function() {
+                        btnReleased(); // Release 'G' after pressing
+                    });
+                }
+                setLight(LED1, led_duration);  // Blink LED1 for single click
                 break;
             case 2:
                 // Double click, toggle state and send 'SPACE' or release depending on the state
                 if (doubleClickState) {
-                    btnReleased();             
-                } else {                    
-                    btnPressed(kb.KEY.B);
+                    btnReleased();  // Release SPACE key
+                    LED2.reset();   // Turn off LED2
+                } else {
+                    btnPressed(44);  // Send SPACE key press
+                    LED2.set();  // Turn on LED2
                 }
                 doubleClickState = !doubleClickState;
-                toggleLED2();
                 break;
         }
         clickCount = 0;  // Reset click count after handling
     }, 400);  // Time to determine click count
 }, BTN, { edge: "falling", debounce: 50, repeat: true });
+
 
 function setLight(light, duration) {
     if (activeLight !== null) {
