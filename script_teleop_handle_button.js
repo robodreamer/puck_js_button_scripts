@@ -3,10 +3,12 @@ NRF.setServices(undefined, { hid : kb.report });
 
 var resetTimer = null;
 var clickTimer = null;
+var inactivityTimer = null;
 var clickCount = 0;
 var activeLight = null;
 var isLED2On = false;  // Variable to track the state of LED2
 var led_duration = 500;
+var inactivityDuration = 3 * 60 * 1000; // 3 minutes in milliseconds
 var doubleClickState = false;  // Track the state of double-click actions
 
 setWatch(function() {
@@ -48,9 +50,9 @@ setWatch(function() {
                 break;
         }
         clickCount = 0;  // Reset click count after handling
+        resetInactivityTimer();  // Reset inactivity timer on any click
     }, 400);  // Time to determine click count
 }, BTN, { edge: "falling", debounce: 50, repeat: true });
-
 
 function setLight(light, duration) {
     if (activeLight !== null) {
@@ -70,8 +72,7 @@ function setLight(light, duration) {
 }
 
 function btnPressed(key) {
-  // Send 'a'
-  //  kb.tap(kb.KEY.A, 0);
+  // Send the key press
   NRF.sendHIDReport([0,0,key,0,0,0,0]);
 }
 
@@ -102,6 +103,24 @@ function handleLEDForSingleClick() {
     }
 }
 
+function resetInactivityTimer() {
+    if (inactivityTimer !== null) {
+        clearTimeout(inactivityTimer);
+    }
+    inactivityTimer = setTimeout(function() {
+        // Reset state and turn off LEDs after inactivityDuration
+        if (doubleClickState) {
+            btnReleased();  // Release SPACE key if active
+            LED2.reset();   // Turn off LED2 if active
+        }
+        doubleClickState = false;  // Reset double click state
+        isLED2On = false;
+        LED1.reset();
+        LED2.reset();
+        LED3.reset();
+    }, inactivityDuration);
+}
+
 // Add 'appearance' to advertising for Windows 11
 NRF.setAdvertising([
   {}, // include original Advertising packet
@@ -113,3 +132,6 @@ NRF.setAdvertising([
         // 0xc3,0x03 : 0x03C3 Joystick
   ]
 ]);
+
+// Start the inactivity timer when the script initializes
+resetInactivityTimer();
