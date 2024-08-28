@@ -6,6 +6,7 @@ var clickTimer = null;
 var inactivityTimer = null;
 var clickCount = 0;
 var activeLight = null;
+
 var isLED2On = false;  // Variable to track the state of LED2
 var led_duration = 500;
 var inactivityDuration = 3 * 60 * 1000; // 3 minutes in milliseconds
@@ -47,6 +48,21 @@ setWatch(function() {
                     LED2.set();  // Turn on LED2
                 }
                 doubleClickState = !doubleClickState;
+                break;
+            case 3:
+                // Triple click
+                if (doubleClickState) {
+                    // Send 'R' key input and blink LED1
+                    NRF.sendHIDReport([0, 0, kb.KEY.R, 44, 0, 0, 0, 0], function() {
+                        btnPressed(44);
+                    });
+                } else {
+                    // Send 'R' key input and blink LED1
+                    NRF.sendHIDReport([0, 0, kb.KEY.R, 0, 0, 0, 0, 0], function() {
+                        btnReleased(); // Release 'G' after pressing
+                    });
+                }
+                setLight(LED3, led_duration);  // Blink LED3 for tripple click
                 break;
         }
         clickCount = 0;  // Reset click count after handling
